@@ -230,6 +230,8 @@ if [ "$CARD_MISSING" -eq 0 ] && [ -f "$LAUNCH" ]; then
 	else
 		log "Frontend started again: $frontend_name$gpu_wait"
 	fi
+	# Ports expect GNU tools; BaseOS's own scripts keep BusyBox.
+	export PATH="/usr/lib/baseos-gnu/bin:${PATH:-/usr/sbin:/usr/bin:/sbin:/bin}"
 	if [ "$LAUNCH_TYPE" = binary ]; then
 		# Binaries use the glibc AArch64 runtime. Use the system
 		# loader so a copied binary needs no executable bit or chmod on the
