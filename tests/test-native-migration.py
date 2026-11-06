@@ -142,6 +142,7 @@ class NativeMigration(unittest.TestCase):
             ORIGINAL_BOOT_IMAGE_SIZE=IMAGES["original"], ORIGINAL_BOOT_IMAGE_SHA256=sha(self.images["original"]),
             GZIP_PACKAGE_SHA256=sha(self.packages["gzip"]), GZIP_BOOT_IMAGE_SIZE=IMAGES["gzip"],
             GZIP_BOOT_IMAGE_SHA256=sha(self.images["gzip"]),
+            FAST_V1_PACKAGE_SHA256=sha(random.Random(20261105).randbytes(PACKAGE_SIZE)),
             BOOT0_OFFSET=BOOT0_OFFSET, BOOT0_SIZE=BOOT0_SIZE, BOOT0_DEBUG_OFFSET=DEBUG_OFFSET,
             BOOT0_BODY_OFFSET=BODY_OFFSET, BOOT0_BODY_SHA256=sha(self.boot0_body),
             BOOT0_ORIGINAL_SHA256=sha(self.make_boot0()))
@@ -217,6 +218,7 @@ class NativeMigration(unittest.TestCase):
         if pair_done:
             self.pair_state.mkdir(parents=True, exist_ok=True)
             (self.pair_state / "complete").write_text("installed\n")
+            (self.pair_state / "complete-60hz").touch()
         self.before_disk, self.before_boot = self.disk.read_bytes(), self.boot.read_bytes()
 
     def set_pair(self, pair):
@@ -572,6 +574,7 @@ class NativeMigration(unittest.TestCase):
         # the fast loader install then waits for it.
         self.flash()
         (self.pair_state / "complete").unlink()
+        (self.pair_state / "complete-60hz").unlink()
         (self.root / "sys/class/power_supply/battery/capacity").write_text("20\n")
         self.run_migration()
         self.assertIsNone(self.done())
