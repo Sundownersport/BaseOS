@@ -5,7 +5,7 @@
     "rg28xx": {
       "source_boot_prefix_sha256": "7a6639333e662393125a590f94e3b06887362c391bc7df1a26fb77bd6cb2f155",
       "boot0_sha256": "8d66e173337cb56efee600c0f840fd59832f2a359c287c7f12b4743d8035888b",
-      "stock_boot0_sha256": "5defacaa2840dd31271c02138357465a41cf412b8b6ccf88bc616296c8834d05",
+      "stock_boot0_sha256": "6736f176dd8210b56d14097cf513af10685c1c0511936371fcfbed5177668561",
       "package_offset": 16793600,
       "package_size": 1310720,
       "package_sha256": "d91473e42b23b5cc5c99c264d95c6f69669a8d43e65f02344320ad3db717a76f",
@@ -47,7 +47,7 @@
     "rg34xxsp": {
       "source_boot_prefix_sha256": "c67f7389d095cb9a013b197eb1f4ad3c1703809472e14218fd27734509b05c8d",
       "boot0_sha256": "87f92be2e3b765d0a0e7f3dcc7c2beaf654d5bbad351d19dc371115d760cf0e8",
-      "stock_boot0_sha256": "244b1c42300894f14524eb1020414a3826dd086326c8359cebe3887e5afbe7b7",
+      "stock_boot0_sha256": "b0db8859bbdc308dfc7af14aa39e006a11aebe6527184640efbe88358d096562",
       "package_offset": 16793600,
       "package_size": 1310720,
       "package_sha256": "a636f02893362a096622c3f5808d8ea438de3c180b28cfe7a6ad406a2b97af68",
@@ -141,7 +141,7 @@
     "rg35xxsp": {
       "source_boot_prefix_sha256": "07e4d9fa0ad10620070072c2893f4f2c0eac19b3bf858915a8456c382a9679ca",
       "boot0_sha256": "fb0b2228de6a97536f35e40a1b7f996e16b1784d07664dd43751a40fe785f06d",
-      "stock_boot0_sha256": "0b7a00419caf95e0e8a459b8e3f267e184ee7f54bd2a161c7781c640d601d2d7",
+      "stock_boot0_sha256": "1b13e8cacc2b0c1c8f052dd0a4522d5c9a3ee1e2f941c8193662a0e0110786da",
       "package_offset": 16793600,
       "package_size": 1310720,
       "package_sha256": "429db32ab1fc32ae320d8b05f9ad9e40f1b698a68cbb9f008febd08ee2f5eb8a",
