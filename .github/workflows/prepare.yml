@@ -1,0 +1,120 @@
+name: prepare
+
+# Builds the prepared inputs (boot-prefix.img, stock-harvest.tar, source.json)
+# from spruceUI/RGXX-images and publishes them as a prepared-<date> bundle.
+# Run only when the stock images change; commit the manifests it uploads.
+
+on:
+  workflow_dispatch:
+    inputs:
+      images_tag:
+        description: spruceUI/RGXX-images release tag
+        default: images
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: rg28xx,     image: "RG28XX-V*" }
+          - { target: rg34xx,     image: "RG34XX-V*" }
+          - { target: rg34xxsp,   image: "RG34XXSP-V*" }
+          - { target: rg35xxplus, image: "RG35XX+-P-V*" }
+          - { target: rg35xxh,    image: "RG35XXH-V*" }
+          - { target: rg35xxsp,   image: "RG35XXSP-V*" }
+          - { target: rg40xxh,    image: "RG40XXH-V*" }
+          - { target: rg40xxv,    image: "RG40XXV-V*" }
+          - { target: rgcubexx,   image: "RGCUBEXX-V*" }
+          - { target: rgsp,       image: "RGSP-V*" }
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scratch space on /mnt
+        run: |
+          sudo mkdir -p /mnt/img
+          sudo chown "$USER" /mnt/img
+          df -h /mnt
+
+      - name: Download stock image
+        run: |
+          gh release download "${{ inputs.images_tag }}" -R spruceUI/RGXX-images \
+            -p "${{ matrix.image }}.7z.001" -p "${{ matrix.image }}.7z.002" -D /mnt/img
+          ls -l /mnt/img
+
+      - name: Extract stock image
+        run: |
+          cd /mnt/img
+          7z x -y -bd ./*.7z.001 >/dev/null
+          rm -f ./*.7z.00*
+          find . -iname '*.img' -printf '%s %p\n'
+
+      - name: Prepare
+        run: |
+          img="$(find /mnt/img -iname '*.img' | head -n 1)"
+          [ -n "$img" ] || { echo "no .img in the archive" >&2; exit 1; }
+          echo "Preparing ${{ matrix.target }} from $(basename "$img")"
+          ./prepare-stock.sh "${{ matrix.target }}" "$img"
+          ./verify-target.sh "${{ matrix.target }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prepared-${{ matrix.target }}
+          path: |
+            work/${{ matrix.target }}/source.json
+            work/${{ matrix.target }}/boot-prefix.img
+            work/${{ matrix.target }}/stock-harvest.tar
+          retention-days: 7
+
+  pack:
+    needs: prepare
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: prepared-*
+          path: artifacts
+
+      - name: Stage prepared targets
+        run: |
+          for dir in artifacts/prepared-*; do
+            target="${dir#artifacts/prepared-}"
+            mkdir -p "work/$target"
+            cp "$dir"/* "work/$target/"
+          done
+          ls -l work/*/
+
+      # RGXX-images has no RG35XX Pro image; keep the inputs the committed
+      # manifest already pins, restored from its bundle.
+      - name: Restore rg35xxpro from the committed bundle
+        run: ./fetch-prepared.sh rg35xxpro
+
+      - name: Pack bundle
+        run: |
+          stamp="$(date -u +%Y%m%d)"
+          echo "STAMP=$stamp" >> "$GITHUB_ENV"
+          ./cache-pack.sh "$stamp"
+
+      - name: Publish bundle
+        run: |
+          tag="prepared-$STAMP"
+          gh release delete "$tag" --cleanup-tag -y 2>/dev/null || true
+          gh release create "$tag" "work/prepared/baseos-prepared-$STAMP.tar.zst" \
+            --prerelease --latest=false --target "$GITHUB_SHA" \
+            --title "Prepared inputs $STAMP" \
+            --notes "Prepared build inputs from spruceUI/RGXX-images (${{ inputs.images_tag }}). rg35xxpro carried over from the previous bundle."
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prepared-manifests
+          path: manifest/prepared/

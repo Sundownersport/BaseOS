@@ -1,0 +1,98 @@
+name: build
+
+# Builds every target from the committed prepared bundle and publishes the
+# result as the "beta" prerelease. promote.yml turns a good beta into a release.
+
+on:
+  workflow_dispatch:
+    inputs:
+      targets:
+        description: Targets to build (blank = all)
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.plan.outputs.targets }}
+      version: ${{ steps.plan.outputs.version }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: plan
+        run: |
+          version="$(tr -d ' \n' < VERSION)"
+          if gh release view "v$version" >/dev/null 2>&1; then
+            echo "v$version is already released; bump VERSION" >&2
+            exit 1
+          fi
+          targets="${{ inputs.targets }}"
+          [ -n "$targets" ] || targets="$(python3 tools/device_profile.py list)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "targets=$(printf '%s\n' $targets | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
+
+  tools:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./build-tools.sh
+      - run: tar -C work -cf tools.tar tools
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tools
+          path: tools.tar
+          retention-days: 3
+
+  build:
+    needs: [plan, tools]
+    runs-on: ubuntu-24.04-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(needs.plan.outputs.targets) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: tools
+      - run: mkdir -p work && tar -C work -xf tools.tar && rm tools.tar
+      - run: ./fetch-prepared.sh "${{ matrix.target }}"
+      - run: ./build-all.sh "${{ matrix.target }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: baseos-${{ matrix.target }}
+          path: |
+            work/${{ matrix.target }}/baseos-${{ matrix.target }}-${{ needs.plan.outputs.version }}.img.zip
+            work/${{ matrix.target }}/baseos-${{ matrix.target }}-${{ needs.plan.outputs.version }}.bosupd
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: [plan, build]
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.plan.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: baseos-*
+          path: out
+          merge-multiple: true
+      - name: Checksums
+        run: |
+          cd out
+          sha256sum ./* | sed 's| \./| |' > SHA256SUMS
+          cat SHA256SUMS
+      - name: Publish beta
+        run: |
+          gh release delete beta --cleanup-tag -y 2>/dev/null || true
+          gh release create beta out/* \
+            --prerelease --latest=false --target "$GITHUB_SHA" \
+            --title "Beta $VERSION" \
+            --notes "$(printf 'Version: %s\nCommit: %s\nTargets: %s\n' "$VERSION" "$GITHUB_SHA" '${{ join(fromJSON(needs.plan.outputs.targets), ' ') }}')"

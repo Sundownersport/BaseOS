@@ -1,0 +1,40 @@
+name: promote
+
+# Turns the "beta" prerelease into a draft v<version> release, in place.
+# Publish the draft by hand once it has been checked.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the beta
+        run: |
+          notes="$(gh release view beta --json body --jq .body)"
+          version="$(printf '%s\n' "$notes" | sed -n 's/^Version: //p')"
+          commit="$(printf '%s\n' "$notes" | sed -n 's/^Commit: //p')"
+          [ -n "$version" ] && [ -n "$commit" ] || { echo "beta has no Version/Commit notes" >&2; exit 1; }
+          gh release view "v$version" >/dev/null 2>&1 && { echo "v$version already exists" >&2; exit 1; }
+          gh release view beta --json assets --jq '.assets[].name' > assets.txt
+          grep -qx SHA256SUMS assets.txt || { echo "beta has no SHA256SUMS" >&2; exit 1; }
+          for target in $(python3 tools/device_profile.py list); do
+            for ext in img.zip bosupd; do
+              grep -qx "baseos-$target-$version.$ext" assets.txt \
+                || { echo "beta is missing baseos-$target-$version.$ext" >&2; exit 1; }
+            done
+          done
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "COMMIT=$commit" >> "$GITHUB_ENV"
+      - name: Promote
+        run: |
+          gh release edit beta --tag "v$VERSION" --target "$COMMIT" \
+            --title "BaseOS-spruce $VERSION" --prerelease=false --draft
+          git push origin --delete beta 2>/dev/null || true
