@@ -1,0 +1,14 @@
+name: build-rgcubexx
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  device:
+    uses: ./.github/workflows/device.yml
+    with:
+      target: rgcubexx
+      image: "RGCUBEXX-V*"

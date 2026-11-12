@@ -1,0 +1,117 @@
+name: device
+
+# Builds one target from its spruceUI/RGXX-images stock image and uploads the
+# result to the "beta" prerelease. Called by build-<target>.yml and build-all.yml.
+# An empty image pattern restores the target's inputs from the committed bundle.
+
+on:
+  workflow_call:
+    inputs:
+      target:
+        type: string
+        required: true
+      image:
+        type: string
+        default: ""
+      images_tag:
+        type: string
+        default: images
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TARGET: ${{ inputs.target }}
+      IMAGE: ${{ inputs.image }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore committed inputs
+        if: inputs.image == ''
+        run: ./fetch-prepared.sh "$TARGET"
+
+      - name: Download stock image
+        if: inputs.image != ''
+        run: |
+          sudo mkdir -p /mnt/img
+          sudo chown "$USER" /mnt/img
+          gh release download "${{ inputs.images_tag }}" -R spruceUI/RGXX-images \
+            -p "$IMAGE.7z.001" -p "$IMAGE.7z.002" -D /mnt/img
+          cd /mnt/img
+          7z x -y -bd ./*.7z.001 >/dev/null
+          rm -f ./*.7z.00*
+          find . -iname '*.img' -printf '%s %p\n'
+
+      - name: Prepare
+        if: inputs.image != ''
+        run: |
+          img="$(find /mnt/img -iname '*.img' | head -n 1)"
+          [ -n "$img" ] || { echo "no .img in the archive" >&2; exit 1; }
+          echo "Preparing $TARGET from $(basename "$img")"
+          ./prepare-stock.sh "$TARGET" "$img"
+
+      - run: ./verify-target.sh "$TARGET"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prepared-${{ inputs.target }}
+          path: |
+            work/${{ inputs.target }}/source.json
+            work/${{ inputs.target }}/boot-prefix.img
+            work/${{ inputs.target }}/stock-harvest.tar
+          retention-days: 3
+
+  build:
+    needs: prepare
+    runs-on: ubuntu-24.04-arm
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TARGET: ${{ inputs.target }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: prepared-${{ inputs.target }}
+          path: work/${{ inputs.target }}
+
+      - name: Tools key
+        run: tools/tools-stamp.sh > tools-stamp.txt
+
+      - uses: actions/cache@v4
+        with:
+          path: work/tools
+          key: baseos-tools-${{ hashFiles('tools-stamp.txt') }}
+
+      - run: ./build-all.sh "$TARGET"
+
+      - name: Upload to beta
+        run: |
+          version="$(tr -d ' \n' < VERSION)"
+          gh release view beta >/dev/null 2>&1 || gh release create beta \
+            --prerelease --latest=false --target "$GITHUB_SHA" \
+            --title "Beta" --notes "Beta builds. Not for general use." || true
+          gh release upload beta --clobber \
+            "work/$TARGET/baseos-$TARGET-$version.img.zip" \
+            "work/$TARGET/baseos-$TARGET-$version.bosupd"
+
+  sums:
+    needs: build
+    runs-on: ubuntu-latest
+    concurrency:
+      group: beta-sums
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Rebuild SHA256SUMS
+        run: |
+          gh release view beta -R "$GITHUB_REPOSITORY" --json assets \
+            --jq '.assets[] | select(.name != "SHA256SUMS") | "\(.digest | sub("^sha256:"; ""))  \(.name)"' \
+            | sort -k2 > SHA256SUMS
+          cat SHA256SUMS
+          gh release upload beta -R "$GITHUB_REPOSITORY" --clobber SHA256SUMS

@@ -1,0 +1,44 @@
+name: build-all
+
+# Starts a fresh "beta" prerelease and builds every target into it.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  reset:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Recreate beta
+        run: |
+          gh release delete beta -R "$GITHUB_REPOSITORY" --cleanup-tag -y 2>/dev/null || true
+          gh release create beta -R "$GITHUB_REPOSITORY" \
+            --prerelease --latest=false --target "$GITHUB_SHA" \
+            --title "Beta" --notes "Beta builds. Not for general use."
+
+  device:
+    needs: reset
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: rg28xx,     image: "RG28XX-V*" }
+          - { target: rg34xx,     image: "RG34XX-V*" }
+          - { target: rg34xxsp,   image: "RG34XXSP-V*" }
+          - { target: rg35xxplus, image: "RG35XX+-P-V*" }
+          - { target: rg35xxh,    image: "RG35XXH-V*" }
+          - { target: rg35xxpro,  image: "" }
+          - { target: rg35xxsp,   image: "RG35XXSP-V*" }
+          - { target: rg40xxh,    image: "RG40XXH-V*" }
+          - { target: rg40xxv,    image: "RG40XXV-V*" }
+          - { target: rgcubexx,   image: "RGCUBEXX-V*" }
+          - { target: rgsp,       image: "RGSP-V*" }
+    uses: ./.github/workflows/device.yml
+    with:
+      target: ${{ matrix.target }}
+      image: ${{ matrix.image }}

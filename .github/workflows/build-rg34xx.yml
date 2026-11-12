@@ -1,0 +1,14 @@
+name: build-rg34xx
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  device:
+    uses: ./.github/workflows/device.yml
+    with:
+      target: rg34xx
+      image: "RG34XX-V*"

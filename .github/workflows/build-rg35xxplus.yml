@@ -1,0 +1,14 @@
+name: build-rg35xxplus
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  device:
+    uses: ./.github/workflows/device.yml
+    with:
+      target: rg35xxplus
+      image: "RG35XX+-P-V*"
