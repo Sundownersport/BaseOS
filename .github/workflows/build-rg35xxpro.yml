@@ -11,4 +11,4 @@ jobs:
     uses: ./.github/workflows/device.yml
     with:
       target: rg35xxpro
-      image: ""
+      image: "RG35XXPRO-V*"

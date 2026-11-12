@@ -32,7 +32,7 @@ jobs:
           - { target: rg34xxsp,   image: "RG34XXSP-V*" }
           - { target: rg35xxplus, image: "RG35XX+-P-V*" }
           - { target: rg35xxh,    image: "RG35XXH-V*" }
-          - { target: rg35xxpro,  image: "" }
+          - { target: rg35xxpro,  image: "RG35XXPRO-V*" }
           - { target: rg35xxsp,   image: "RG35XXSP-V*" }
           - { target: rg40xxh,    image: "RG40XXH-V*" }
           - { target: rg40xxv,    image: "RG40XXV-V*" }
