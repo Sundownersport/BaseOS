@@ -87,6 +87,20 @@ jobs:
           path: work/tools
           key: baseos-tools-${{ hashFiles('tools-stamp.txt') }}
 
+      - uses: actions/cache@v4
+        with:
+          path: work/audio-build/linux-4.9.170.tar.xz
+          key: linux-4.9.170
+
+      # The audio module's toolchain container has no curl; build-audio-module.sh
+      # uses a cached archive and checks its SHA-256.
+      - name: Kernel source for the audio module
+        run: |
+          mkdir -p work/audio-build
+          [ -f work/audio-build/linux-4.9.170.tar.xz ] || curl -fL -o work/audio-build/linux-4.9.170.tar.xz \
+            https://cdn.kernel.org/pub/linux/kernel/v4.x/linux-4.9.170.tar.xz
+          echo "33887b40fc8e0b71f423bb7afe112a4ae190378145f4a3f3892c563b7e43131d  work/audio-build/linux-4.9.170.tar.xz" | sha256sum -c -
+
       - run: ./build-all.sh "$TARGET"
 
       - name: Upload to beta

@@ -130,7 +130,10 @@ def derive(target: str, prefix: Path, catalog: Path = CATALOG) -> dict:
         original_boot = handle.read(profile["boot_partition_sectors"] * 512)
     require(sha(original_package) == profile["package_sha256"], "unknown original TOC1 package")
     require(sha(original_boot) == profile["boot_partition_sha256"], "unknown original boot partition")
-    require(sha(original_boot0) == profile["boot0_sha256"], "unknown original boot0")
+    # StockMod and Anbernic's stock boot0 differ only in header DRAM parameters
+    # and the checksum; the body and debug_mode checks below cover the rest.
+    require(sha(original_boot0) in (profile["boot0_sha256"], profile.get("stock_boot0_sha256")),
+            "unknown original boot0")
     package = bytearray(original_package)
     require(package[:16] == b"sunxi-package\0\0\0" and word(package, 16) == 0x89119800,
             "not the expected Allwinner TOC1")
