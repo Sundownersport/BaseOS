@@ -26,6 +26,8 @@ done
 BASEOS_VERSION="$(tr -d ' \n' < "$HERE/VERSION")"
 [ -n "$BASEOS_VERSION" ] || { echo "VERSION is empty"; exit 1; }
 BASEOS_BUILD="$(git -C "$HERE" describe --always --dirty 2>/dev/null || echo unknown)"
+BASEOS_REPO="$(tr -d ' \n' < "$HERE/REPO")"
+[ -n "$BASEOS_REPO" ] || { echo "REPO is empty"; exit 1; }
 [ -f "$TOOLS/ca-certificates.crt" ] \
   || { echo "missing $TOOLS/ca-certificates.crt (run build-tools.sh)"; exit 1; }
 # Refuse to ship binaries older than the sources in this checkout. A stale
@@ -54,6 +56,7 @@ docker run --rm --platform "$BASEOS_DOCKER_PLATFORM_AARCH64" \
   -e BASEOS_BLUETOOTH="$PROFILE_BLUETOOTH" \
   -e BASEOS_VERSION="$BASEOS_VERSION" \
   -e BASEOS_BUILD="$BASEOS_BUILD" \
+  -e BASEOS_REPO="$BASEOS_REPO" \
   alpine:3.20 sh -euc '
   # Build tools remain outside the assembled rootfs. Native AArch64 binutils
   # can strip the vendor module without changing its loadable code or ABI.
@@ -140,6 +143,7 @@ docker run --rm --platform "$BASEOS_DOCKER_PLATFORM_AARCH64" \
     printf "BASEOS=1\nBASEOS_PLATFORM=h700\n"
     printf "BASEOS_VERSION=%s\n" "$BASEOS_VERSION"
     printf "BASEOS_BUILD=%s\n" "$BASEOS_BUILD"
+    printf "BASEOS_REPO=%s\n" "$BASEOS_REPO"
     printf "BASEOS_TARGET=%s\n" "$BASEOS_TARGET"
     printf "BASEOS_DEVICE=%s\n" "$BASEOS_DEVICE"
     printf "BASEOS_MODEL=\"%s\"\n" "$BASEOS_MODEL"

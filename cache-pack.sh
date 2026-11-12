@@ -32,7 +32,7 @@ case "$STAMP" in
   *) echo "usage: $0 [YYYYMMDD]" >&2; exit 2 ;;
 esac
 
-REPO_URL="https://github.com/pvaibhav/BaseOS"
+REPO_URL="https://github.com/$(tr -d ' \n' < "$HERE/REPO")"
 PREPARED="$HERE/manifest/prepared"
 OUT_DIR="$HERE/work/prepared"
 NAME="baseos-prepared-$STAMP.tar.zst"
