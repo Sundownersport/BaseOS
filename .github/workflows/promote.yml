@@ -1,6 +1,6 @@
 name: promote
 
-# Turns the "beta" prerelease into a draft v<VERSION> release, in place, tagged
+# Turns the "beta" prerelease into a draft v<version> release, in place, tagged
 # at the commit this runs on.
 # Publish the draft by hand once it has been checked.
 
@@ -19,9 +19,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check the beta
         run: |
-          version="$(tr -d ' \n' < VERSION)"
-          gh release view "v$version" >/dev/null 2>&1 && { echo "v$version already exists" >&2; exit 1; }
           gh release view beta --json assets --jq '.assets[].name' > assets.txt
+          # The version the beta was built with, which every target must share
+          versions="$(sed -n 's/^baseos-[^-]*-\(.*\)\.img\.zip$/\1/p' assets.txt | sort -u)"
+          [ "$(printf '%s\n' "$versions" | grep -c .)" = 1 ] \
+            || { echo "beta holds more than one version: $versions" >&2; exit 1; }
+          version="$versions"
+          gh release view "v$version" >/dev/null 2>&1 && { echo "v$version already exists" >&2; exit 1; }
           grep -qx SHA256SUMS assets.txt || { echo "beta has no SHA256SUMS" >&2; exit 1; }
           for target in $(python3 tools/device_profile.py list); do
             for ext in img.zip bosupd; do

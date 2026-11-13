@@ -13,7 +13,13 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
+      # One date for every target, even if the run crosses midnight
+      - id: version
+        run: echo "version=$(TZ=America/Los_Angeles date +%Y.%m.%d)" >> "$GITHUB_OUTPUT"
+
       - name: Recreate beta
         run: |
           gh release delete beta -R "$GITHUB_REPOSITORY" --cleanup-tag -y 2>/dev/null || true
@@ -42,3 +48,4 @@ jobs:
     with:
       target: ${{ matrix.target }}
       image: ${{ matrix.image }}
+      version: ${{ needs.reset.outputs.version }}

@@ -20,8 +20,10 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 TARGETS="$*"
 [ -n "$TARGETS" ] || TARGETS="$(python3 "$HERE/tools/device_profile.py" list)"
 
-VERSION="$(tr -d ' \n' < "$HERE/VERSION")"
+# CI passes the build date as BASEOS_VERSION; local builds use the VERSION file.
+VERSION="${BASEOS_VERSION:-$(tr -d ' \n' < "$HERE/VERSION")}"
 [ -n "$VERSION" ] || { echo "VERSION is empty" >&2; exit 1; }
+export BASEOS_VERSION="$VERSION"
 command -v zip >/dev/null 2>&1 || { echo "zip is required to package images" >&2; exit 1; }
 
 # Validate every target and its inputs up front, so a typo or a missing restore

@@ -23,7 +23,7 @@ TOOLS="$HERE/work/tools"
 for tool in busybox dropbearmulti curl fbsplash gptgrow gptslot sftp-server adbd axp-off charger-wait avahi-daemon boot-clock e2fsck; do
   [ -x "$TOOLS/$tool" ] || { echo "missing $TOOLS/$tool (run build-tools.sh)"; exit 1; }
 done
-BASEOS_VERSION="$(tr -d ' \n' < "$HERE/VERSION")"
+BASEOS_VERSION="${BASEOS_VERSION:-$(tr -d ' \n' < "$HERE/VERSION")}"
 [ -n "$BASEOS_VERSION" ] || { echo "VERSION is empty"; exit 1; }
 BASEOS_BUILD="$(git -C "$HERE" describe --always --dirty 2>/dev/null || echo unknown)"
 BASEOS_REPO="$(tr -d ' \n' < "$HERE/REPO")"

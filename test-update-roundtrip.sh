@@ -19,7 +19,7 @@ WORK="$HERE/work/$TARGET"
 IMAGE="$WORK/baseos-$TARGET.img"
 [ -f "$IMAGE" ] || { echo "missing $IMAGE (run build-image.sh $TARGET)" >&2; exit 1; }
 # The payload for the version currently in VERSION — work/ may hold several.
-BASEOS_VERSION="$(tr -d ' \n' < "$HERE/VERSION")"
+BASEOS_VERSION="${BASEOS_VERSION:-$(tr -d ' \n' < "$HERE/VERSION")}"
 PAYLOAD="$WORK/baseos-$TARGET-$BASEOS_VERSION.bosupd"
 [ -f "$PAYLOAD" ] || { echo "missing $PAYLOAD (run build-update.sh $TARGET)" >&2; exit 1; }
 echo "image:   $IMAGE"

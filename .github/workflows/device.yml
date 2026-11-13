@@ -16,6 +16,10 @@ on:
       images_tag:
         type: string
         default: images
+      # Release version; empty means the build date (US Pacific)
+      version:
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -131,11 +135,18 @@ jobs:
             https://cdn.kernel.org/pub/linux/kernel/v4.x/linux-4.9.170.tar.xz
           echo "33887b40fc8e0b71f423bb7afe112a4ae190378145f4a3f3892c563b7e43131d  work/audio-build/linux-4.9.170.tar.xz" | sha256sum -c -
 
+      - name: Version
+        run: |
+          v="${{ inputs.version }}"
+          [ -n "$v" ] || v="$(TZ=America/Los_Angeles date +%Y.%m.%d)"
+          echo "BASEOS_VERSION=$v" >> "$GITHUB_ENV"
+          echo "Building $v"
+
       - run: ./build-all.sh "$TARGET"
 
       - name: Upload to beta
         run: |
-          version="$(tr -d ' \n' < VERSION)"
+          version="$BASEOS_VERSION"
           gh release view beta >/dev/null 2>&1 || gh release create beta \
             --prerelease --latest=false --target "$GITHUB_SHA" \
             --title "Beta" --notes "Beta builds. Not for general use." || true

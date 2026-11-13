@@ -13,7 +13,7 @@ WORK="$HERE/work/$TARGET"
 IMAGE="$WORK/baseos-$TARGET.img"
 [ -f "$IMAGE" ] || { echo "missing $IMAGE (run build-image.sh $TARGET)" >&2; exit 1; }
 
-BASEOS_VERSION="$(tr -d ' \n' < "$HERE/VERSION")"
+BASEOS_VERSION="${BASEOS_VERSION:-$(tr -d ' \n' < "$HERE/VERSION")}"
 BASEOS_BUILD="$(git -C "$HERE" describe --always --dirty 2>/dev/null || echo unknown)"
 OUT="$WORK/baseos-$TARGET-$BASEOS_VERSION.bosupd"
 
