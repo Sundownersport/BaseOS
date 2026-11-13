@@ -65,8 +65,32 @@ jobs:
             work/${{ inputs.target }}/stock-harvest.tar
           retention-days: 3
 
+  # The Vulkan driver cross-compiles on x86-64 and is the same for every target;
+  # the cache keeps it to one build per change of vulkan/.
+  vulkan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        id: cache
+        with:
+          path: work/vulkan
+          key: baseos-vulkan-${{ hashFiles('vulkan/**') }}
+
+      - if: steps.cache.outputs.cache-hit != 'true'
+        run: ./build-vulkan.sh
+
+      - run: tar -C work -cf vulkan.tar vulkan
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vulkan-${{ inputs.target }}
+          path: vulkan.tar
+          retention-days: 3
+
   build:
-    needs: prepare
+    needs: [prepare, vulkan]
     runs-on: ubuntu-24.04-arm
     env:
       GH_TOKEN: ${{ github.token }}
@@ -78,6 +102,12 @@ jobs:
         with:
           name: prepared-${{ inputs.target }}
           path: work/${{ inputs.target }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: vulkan-${{ inputs.target }}
+
+      - run: tar -xf vulkan.tar -C work && rm vulkan.tar
 
       - name: Tools key
         run: tools/tools-stamp.sh > tools-stamp.txt
