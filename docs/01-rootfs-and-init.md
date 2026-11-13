@@ -41,7 +41,7 @@ as harvested. See [boot performance](09-boot-profiling.md).
 | `/run`, `/tmp`, `/var`, `/dev/shm` | tmpfs runtime state |
 | `/mnt/vendor` | Compatibility files shipped in the rootfs; no vendor partition mounted here |
 | `/usr/lib/baseos-gnu/bin` | GNU tools from stock for PortMaster ports. First on the frontend's PATH; BaseOS scripts keep BusyBox in `/usr/bin` |
-| `/usr/share/licenses` | Licences for the Vulkan driver (`build-vulkan.sh`) and for the Ubuntu 22.04 port libraries the stock image lacks (`debs/jammy-arm64.list`, `build-debs.sh`) |
+| `/usr/share/licenses` | Licences for the Vulkan driver (`build-vulkan.sh`) and for the Ubuntu port libraries the stock image lacks (`debs/packages.list`, `build-debs.sh`) |
 
 The root filesystem is mounted read-write. On a card that still boots through
 the vendor initramfs, the initramfs mounts it that way. Otherwise the kernel

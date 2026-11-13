@@ -316,7 +316,7 @@ docker run --rm --platform "$BASEOS_DOCKER_PLATFORM_AARCH64" \
         | sed "s|^|MISSING for ${f#"$R"}: |" || true
   done > /tmp/closure-report.txt 2>&1 || true
   for so in /usr/lib/aarch64-linux-gnu/libvulkan.so.1 /usr/lib/aarch64-linux-gnu/libvulkan_panfrost.so \
-      $(cd /debs && find usr -type f -name "*.so.*" | sed "s|^|/|"); do
+      $(cd /debs && find usr -type f -name "*.so.*" ! -path "*arm-linux-gnueabihf*" | sed "s|^|/|"); do
     chroot "$R" /usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1 --list \
         "$so" 2>/dev/null | grep "not found" \
         | sed "s|^|MISSING for $so: |" || true
