@@ -132,6 +132,10 @@ docker run --rm --platform "$BASEOS_DOCKER_PLATFORM_AARCH64" \
   # dev-name GLES symlinks (launch.sh probes libEGL.so before libEGL.so.1)
   ln -sf libEGL.so.1 "$R/usr/lib/libEGL.so"
   ln -sf libGLESv2.so.2 "$R/usr/lib/libGLESv2.so"
+  # the 32-bit SDL2 opens libEGL.so and libGLESv2.so by these dev names
+  ln -sf libEGL.so.1 "$R/usr/lib32/libEGL.so"
+  ln -sf libGLESv2.so.2 "$R/usr/lib32/libGLESv2.so"
+  ln -sf libmali.so.0 "$R/usr/lib32/libmali.so"
   # the soname alias stock has; the PortMaster Weston runtime links it
   ln -sf libmali.so.0 "$R/usr/lib/libmali.so.1"
   # Vulkan: loader, PanVK driver and its ICD file (build-vulkan.sh)
