@@ -1,0 +1,7 @@
+# Ubuntu 22.04 arm64 packages for libraries ports need that the stock image
+# lacks. The stock userland is jammy, so these match its glibc and libraries.
+# build-debs.sh installs only each package's shared libraries and copyright.
+# <path under http://ports.ubuntu.com/ubuntu-ports/> <sha256>
+pool/universe/libm/libmodplug/libmodplug1_0.8.9.0-3_arm64.deb a354c5aa85a6b6fa35623588afd845f960b23485b69c16a3fd1b8ba1b0c0b38c
+pool/universe/libs/libsdl2-gfx/libsdl2-gfx-1.0-0_1.0.4+dfsg-4_arm64.deb a31a5dfbb99cec5109f286aa996618eaa3e2dfc0cb0412adc6755198f81c6716
+pool/universe/o/opusfile/libopusfile0_0.9+20170913-1.1build1_arm64.deb 00147abc42e8a2847d3ad094b3220be0c5aea33b0bb1a4f8941e5cf91403affd
