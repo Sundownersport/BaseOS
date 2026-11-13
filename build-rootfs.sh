@@ -132,6 +132,8 @@ docker run --rm --platform "$BASEOS_DOCKER_PLATFORM_AARCH64" \
   # dev-name GLES symlinks (launch.sh probes libEGL.so before libEGL.so.1)
   ln -sf libEGL.so.1 "$R/usr/lib/libEGL.so"
   ln -sf libGLESv2.so.2 "$R/usr/lib/libGLESv2.so"
+  # stock's soname alias; PortMaster's Weston runtime links it
+  ln -sf libmali.so.0 "$R/usr/lib/libmali.so.1"
   # Vulkan: loader, PanVK driver and its ICD file (build-vulkan.sh)
   cp -a /vulkan/. "$R/"
   # Ubuntu 22.04 libraries the stock image lacks (build-debs.sh)
